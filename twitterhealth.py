@@ -31,6 +31,7 @@ class TwitterHealth(object):
             print self.api.get_user(follower).screen_name
 
     def check_followers_updates(self, screen_name):
+        print "Checking for new followers and unfollowers..."
         previous_followers = self.session.query(Follower).filter_by(is_following=True).all()
         previous_followers_ids = [follower.twitter_id for follower in previous_followers]
         current_followers = self.get_followers(screen_name)
@@ -77,13 +78,29 @@ class TwitterHealth(object):
             print "no new unfollowers"
 
     def check_for_no_followbacks(self, screen_name):
-        for f in self.get_friends(screen_name):
-            if f not in self.get_followers(screen_name):
-                print "Not follower backer {0}".format(self.api.get_user(f).screen_name)
-                # print "Unfollow {0}?".format(self.api.get_user(f).screen_name)
-                #if raw_input("Y/N?") == 'y' or 'Y':
-                #    api.destroy_friendship(f)
+        print "Check for users who don't follow you back"
+        friends = self.get_friends(screen_name)
+        followers = self.get_followers(screen_name)
+        no_follow_backs = []
+        for f in friends:
+            if f not in followers:
+                user_info = self.api.get_user(f)
+                no_follow_backs.append(f)
+                print "Found an not follower backer: %s [%s] " % \
+                      (user_info.name, user_info.screen_name)
+        return no_follow_backs
+
+    def unfollow_ungratefuls(self, no_follow_backs):
+        for ungrateful in no_follow_backs:
+            print "Unfollow {0}?".format(self.api.get_user(ungrateful).screen_name)
+            answer = raw_input("[Y/n]?").lower()
+            if answer[0] == "y":
+                self.api.destroy_friendship(ungrateful)
 
 if __name__ == '__main__':
-    # TwitterHealth().check_followers_updates(config.SCREEN_NAME)
-    TwitterHealth().check_for_no_followbacks(config.SCREEN_NAME)
+    TwitterHealth().check_followers_updates(config.SCREEN_NAME)
+    no_follow_backs = TwitterHealth().check_for_no_followbacks(config.SCREEN_NAME)
+    print "Do you want to get rid of no follow backs?"
+    answer = raw_input("[Y/n]?").lower()
+    if answer[0] == "y":
+        TwitterHealth().unfollow_ungratefuls(no_follow_backs)
