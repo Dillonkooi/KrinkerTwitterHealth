@@ -62,11 +62,12 @@ class TwitterHealth(object):
             if old_follower not in current_followers:
                 new_unfollowers.append(old_follower)
                 # Unfollower!
-                follower = self.api.get_user(current_follower)
+                unfollower = self.session.query(Follower).filter_by(twitter_id=old_follower).one()
+                follower = self.api.get_user(old_follower)
                 print "[%s] Found an unfollower : %s [%s] (#%d)" % \
-                      (datetime.today().strftime('%d/%m %H:%M'), follower.name, follower.screen_name,
-                       follower.id)
-                old_follower.is_following = False
+                      (datetime.today().strftime('%d/%m %H:%M'), unfollower.name, unfollower.screen_name,
+                       unfollower.id)
+                unfollower.is_following = False
 
         # Close the session
         self.session.commit()
@@ -99,8 +100,8 @@ class TwitterHealth(object):
 
 if __name__ == '__main__':
     TwitterHealth().check_followers_updates(config.SCREEN_NAME)
-    no_follow_backs = TwitterHealth().check_for_no_followbacks(config.SCREEN_NAME)
-    print "Do you want to get rid of no follow backs?"
-    answer = raw_input("[Y/n]?").lower()
-    if answer[0] == "y":
-        TwitterHealth().unfollow_ungratefuls(no_follow_backs)
+    # no_follow_backs = TwitterHealth().check_for_no_followbacks(config.SCREEN_NAME)
+    # print "Do you want to get rid of no follow backs?"
+    # answer = raw_input("[Y/n]?").lower()
+    # if answer[0] == "y":
+    #     TwitterHealth().unfollow_ungratefuls(no_follow_backs)
